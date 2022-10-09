@@ -57,7 +57,7 @@ class RoverSpec extends AnyWordSpec with Matchers with BeforeAndAfterEach {
   }
 
   private val coordinates = mock[Coordinates]
-  private val testCoordinates = Coordinates(1, 1, North)
+  private val testCoordinates = Coordinates(1, 1, North, 10)
 
   override def beforeEach(): Unit = {
     reset(coordinates)
