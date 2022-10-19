@@ -1,141 +1,192 @@
 package itv.mars.rover
 
-import itv.mars.rover.MoveCommand.{MoveForward, RotateAnticlockwise, RotateClockwise}
-import itv.mars.rover.Orientation.North
-import org.mockito.ArgumentMatchers.{any, eq => meq}
-import org.mockito.MockitoSugar.{mock, reset, verify, when}
+import itv.mars.rover.MoveCommand._
+import itv.mars.rover.Orientation._
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 class RoverSpec extends AnyWordSpec with Matchers with BeforeAndAfterEach {
 
-  "Rover on issueCommand" should {
+  private val gridSize = 13
 
-    "NOT change the original Rover" in {
-      val previousCommands: List[MoveCommand] = List(RotateClockwise, MoveForward, RotateAnticlockwise)
-      val newCommand: MoveCommand = MoveForward
-      val rover = Rover(previousCommands: _*)
+  "Rover on runCommands" when {
 
-      rover.issueCommand(newCommand)
-
-      rover.commands.toList mustBe previousCommands
-    }
-
-    "return new Rover with the new command added at the end of the commands queue" when {
-
-      "there were no commands issued before" in {
-        val rover = Rover.initial
-        val newCommand: MoveCommand = MoveForward
-
-        val newRover = rover.issueCommand(newCommand)
-
-        newRover.commands.toList mustBe List(newCommand)
-      }
-
-      "there was a single command in the queue" in {
-        val previousCommand: MoveCommand = RotateClockwise
-        val newCommand: MoveCommand = MoveForward
-        val rover = Rover(previousCommand)
-
-        val newRover = rover.issueCommand(newCommand)
-
-        newRover.commands.toList mustBe List(previousCommand, newCommand)
-      }
-
-      "there were multiple commands in the queue" in {
-        val previousCommands: List[MoveCommand] = List(RotateClockwise, MoveForward, RotateAnticlockwise)
-        val newCommand: MoveCommand = MoveForward
-        val rover = Rover(previousCommands: _*)
-
-        val newRover = rover.issueCommand(newCommand)
-
-        val expectedCommands = previousCommands :+ newCommand
-        newRover.commands.toList mustBe expectedCommands
-      }
-    }
-  }
-
-  private val coordinates = mock[Coordinates]
-  private val testCoordinates = Coordinates(1, 1, North, 10)
-
-  override def beforeEach(): Unit = {
-    reset(coordinates)
-    when(coordinates.applyCommand(any())).thenReturn(testCoordinates)
-  }
-
-  "Rover on runSingleCommand" when {
-
-    "commands queue is empty" should {
+    "commands list is empty" should {
       "return itself" in {
-        val rover = Rover.initial
+        val commands = List.empty[MoveCommand]
+        val rover = Rover(Coordinates(1, 1), North, gridSize)
 
-        val result = rover.runSingleCommand()
-
-        result mustBe rover
+        testCommands(commands, rover, rover)
       }
     }
 
-    "commands queue contains single command" should {
+    "commands list contains single MoveForward command" when {
+      val commands = List(MoveForward)
 
-      "NOT change the original Rover" in {
-        val command: MoveCommand = RotateClockwise
-        val rover = Rover(coordinates, command)
+      "orientation is North" when {
 
-        rover.runSingleCommand()
+        "rover is NOT at the border of the grid" should {
+          "return Rover with Y coordinate increased by 1" in {
+            val rover = Rover(Coordinates(1, 1), North, gridSize)
+            val expectedRover = rover.copy(coordinates = Coordinates(x = 1, y = 2))
 
-        rover.commands.toList mustBe List(command)
-        rover.coordinates mustBe coordinates
+            testCommands(commands, rover, expectedRover)
+          }
+        }
+
+        "rover is at the North border of the grid" should {
+          "return Rover with Y coordinate equal to 0" in {
+            val rover = Rover(Coordinates(1, gridSize - 1), North, gridSize)
+            val expectedRover = rover.copy(coordinates = Coordinates(x = 1, y = 0))
+
+            testCommands(commands, rover, expectedRover)
+          }
+        }
       }
 
-      "return Rover with empty commands queue" in {
-        val command: MoveCommand = RotateClockwise
-        val rover = Rover(coordinates, command)
+      "orientation is South" when {
 
-        val result = rover.runSingleCommand()
+        "rover is NOT at the border of the grid" should {
+          "return Rover with Y coordinate decreased by 1" in {
+            val rover = Rover(Coordinates(1, 1), South, gridSize)
+            val expectedRover = rover.copy(coordinates = Coordinates(x = 1, y = 0))
 
-        result.commands mustBe empty
+            testCommands(commands, rover, expectedRover)
+          }
+        }
+
+        "rover is at the South border of the grid" should {
+          "return Rover with Y coordinate equal to grid size minus 1" in {
+            val gridSize = 13
+            val rover = Rover(Coordinates(1, 0), South, gridSize)
+            val expectedRover = rover.copy(coordinates = Coordinates(x = 1, y = gridSize - 1))
+
+            testCommands(commands, rover, expectedRover)
+          }
+        }
       }
 
-      "call Coordinates applyCommand method" in {
-        val command: MoveCommand = RotateClockwise
-        val rover = Rover(coordinates, command)
+      "orientation is East" when {
 
-        rover.runSingleCommand()
+        "rover is NOT at the border of the grid" should {
+          "return Rover with X coordinate increased by 1" in {
+            val rover = Rover(Coordinates(1, 1), East, gridSize)
+            val expectedRover = rover.copy(coordinates = Coordinates(x = 2, y = 1))
 
-        verify(coordinates).applyCommand(meq(command))
+            testCommands(commands, rover, expectedRover)
+          }
+        }
+
+        "rover is at the East border of the grid" should {
+          "return Rover with X coordinate equal to 0" in {
+            val gridSize = 13
+            val rover = Rover(Coordinates(gridSize - 1, 1), East, gridSize)
+            val expectedRover = rover.copy(coordinates = Coordinates(x = 0, y = 1))
+
+            testCommands(commands, rover, expectedRover)
+          }
+        }
       }
 
-      "return Rover with coordinates obtained from Coordinates applyCommand method" in {
-        val command: MoveCommand = RotateClockwise
-        val rover = Rover(coordinates, command)
+      "orientation is West" when {
 
-        val result = rover.runSingleCommand()
+        "rover is NOT at the border of the grid" should {
+          "return Rover with X coordinate decreased by 1" in {
+            val rover = Rover(Coordinates(1, 1), West, gridSize)
+            val expectedRover = rover.copy(coordinates = Coordinates(x = 0, y = 1))
 
-        result.coordinates mustBe testCoordinates
+            testCommands(commands, rover, expectedRover)
+          }
+        }
+
+        "rover is at the West border of the grid" should {
+          "return Rover with X coordinate equal to grid size minus 1" in {
+            val gridSize = 13
+            val rover = Rover(Coordinates(0, 1), West, gridSize)
+            val expectedRover = rover.copy(coordinates = Coordinates(x = gridSize - 1, y = 1))
+
+            testCommands(commands, rover, expectedRover)
+          }
+        }
+      }
+
+    }
+
+    "commands list contains single RotateClockwise command" when {
+      val commands = List(RotateClockwise)
+
+      "orientation is North" should {
+        "return Rover with Orientation East" in {
+          testRotateCommands(commands, North, East)
+        }
+      }
+
+      "orientation is South" should {
+        "return Rover with Orientation West" in {
+          testRotateCommands(commands, South, West)
+        }
+      }
+
+      "orientation is East" should {
+        "return Rover with Orientation South" in {
+          testRotateCommands(commands, East, South)
+        }
+      }
+
+      "orientation is West" should {
+        "return Rover with Orientation North" in {
+          testRotateCommands(commands, West, North)
+        }
       }
     }
 
-    "commands queue contains multiple commands" should {
+    "commands list contains single RotateAnticlockwise command" when {
+      val commands = List(RotateAnticlockwise)
 
-      "return Rover with commands queue without first element" in {
-        val commands: List[MoveCommand] = List(RotateClockwise, MoveForward, RotateAnticlockwise)
-        val rover = Rover(coordinates, commands: _*)
-
-        val result = rover.runSingleCommand()
-
-        result.commands.toList mustBe commands.tail
+      "orientation is North" should {
+        "return Rover with Orientation West" in {
+          testRotateCommands(commands, North, West)
+        }
       }
 
-      "return Rover with coordinates obtained from Coordinates applyCommand method" in {
-        val commands: List[MoveCommand] = List(RotateClockwise, MoveForward, RotateAnticlockwise)
-        val rover = Rover(coordinates, commands: _*)
+      "orientation is South" should {
+        "return Rover with Orientation East" in {
+          testRotateCommands(commands, South, East)
+        }
+      }
 
-        val result = rover.runSingleCommand()
+      "orientation is East" should {
+        "return Rover with Orientation North" in {
+          testRotateCommands(commands, East, North)
+        }
+      }
 
-        result.coordinates mustBe testCoordinates
+      "orientation is West" should {
+        "return Rover with Orientation South" in {
+          testRotateCommands(commands, West, South)
+        }
       }
     }
+  }
+
+  private def testRotateCommands(
+      commands: List[MoveCommand],
+      initialOrientation: Orientation,
+      expectedOrientation: Orientation
+  ): Unit = {
+    val rover = Rover(Coordinates(1, 1), initialOrientation, gridSize)
+    testCommands(commands, rover, rover.copy(orientation = expectedOrientation))
+  }
+
+  private def testCommands(
+      commands: List[MoveCommand],
+      initialRover: Rover,
+      expectedRover: Rover
+  ): Unit = {
+    val actualRover = Rover.runCommands(commands).run(initialRover).value._1
+    actualRover.coordinates mustBe expectedRover.coordinates
+    actualRover.orientation mustBe expectedRover.orientation
   }
 
 }
