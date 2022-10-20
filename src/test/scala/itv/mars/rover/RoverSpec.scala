@@ -2,11 +2,10 @@ package itv.mars.rover
 
 import itv.mars.rover.MoveCommand._
 import itv.mars.rover.Orientation._
-import org.scalatest.BeforeAndAfterEach
 import org.scalatest.matchers.must.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-class RoverSpec extends AnyWordSpec with Matchers with BeforeAndAfterEach {
+class RoverSpec extends AnyWordSpec with Matchers {
 
   private val gridSize = 13
 

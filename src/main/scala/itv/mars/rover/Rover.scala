@@ -5,12 +5,10 @@ import itv.mars.rover.MoveCommand._
 import itv.mars.rover.Orientation._
 
 case class Rover(coordinates: Coordinates, orientation: Orientation, gridSize: Int) {
-  private def incrX: Rover = this.copy(coordinates = coordinates.copy(x = withRespectToGridSize(coordinates.x + 1)))
-  private def decrX: Rover = this.copy(coordinates = coordinates.copy(x = withRespectToGridSize(coordinates.x - 1)))
-  private def incrY: Rover = this.copy(coordinates = coordinates.copy(y = withRespectToGridSize(coordinates.y + 1)))
-  private def decrY: Rover = this.copy(coordinates = coordinates.copy(y = withRespectToGridSize(coordinates.y - 1)))
-
-  private def withRespectToGridSize(value: Int): Int = (value + gridSize) % gridSize
+  private def incrX: Rover = this.copy(coordinates = coordinates.incrX(gridSize))
+  private def decrX: Rover = this.copy(coordinates = coordinates.decrX(gridSize))
+  private def incrY: Rover = this.copy(coordinates = coordinates.incrY(gridSize))
+  private def decrY: Rover = this.copy(coordinates = coordinates.decrY(gridSize))
 }
 
 object Rover {
